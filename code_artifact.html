@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>신나는 모양 탐험대 - 도형 사진 붙이기</title>
+  
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,700&family=Gaegu:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --ink: #173047;
+      --paper: #fffdf6;
+      --square: #ef6b55;
+      --triangle: #f5b84b;
+      --circle: #42a6a2;
+      --soft: #31576a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .title-font { font-family: "Fraunces", "Gaegu", serif; }
+
+    .app-shell {
+      width: 100%;
+      min-height: 100vh;
+      padding: clamp(16px, 3vw, 30px) clamp(14px, 3vw, 22px) 42px;
+      background-image: 
+        radial-gradient(circle at 11% 6%, rgba(255, 202, 112, 0.31), transparent 23rem),
+        radial-gradient(circle at 92% 16%, rgba(88, 190, 181, 0.22), transparent 20rem);
+    }
+
+    .lesson-board {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .view { display: none; }
+    .view.is-active {
+      display: block;
+      animation: rise 0.38s ease both;
+    }
+
+    .hero-card, .dashboard-heading {
+      position: relative;
+      overflow: hidden;
+      border: 3px solid var(--ink);
+      border-radius: 30px;
+      box-shadow: 8px 8px 0 var(--ink);
+    }
+
+    .hero-card {
+      min-height: 440px;
+      display: grid;
+      place-items: center;
+      padding: clamp(26px, 5vw, 52px);
+      text-align: center;
+    }
+
+    .home-content { width: min(100%, 720px); }
+
+    .shape-parade {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: clamp(12px, 3vw, 28px);
+      margin: 20px 0 30px;
+    }
+
+    .shape-parade svg {
+      width: clamp(54px, 9vw, 84px);
+      height: clamp(54px, 9vw, 84px);
+      filter: drop-shadow(3px 4px 0 rgba(23, 48, 71, 0.16));
+      animation: bob 3s ease-in-out infinite;
+    }
+    .shape-parade svg:nth-child(2) { animation-delay: 0.35s; }
+    .shape-parade svg:nth-child(3) { animation-delay: 0.7s; }
+
+    .student-choices, .student-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .student-choices {
+      max-width: 620px;
+      margin: 30px auto 0;
+    }
+
+    .student-button, .nav-button, .complete-button, .dashboard-button {
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      box-shadow: 4px 4px 0 rgba(23, 48, 71, 0.22);
+      font-weight: 700;
+      transition: all 0.16s ease;
+      cursor: pointer;
+    }
+
+    .student-button:hover, .nav-button:hover, .complete-button:hover, .dashboard-button:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 rgba(23, 48, 71, 0.22);
+    }
+
+    .student-button {
+      min-height: 112px;
+      padding: 18px;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+    }
+
+    .student-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      background: #fff8dc;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .shape-row {
+      display: grid;
+      grid-template-columns: 165px minmax(0, 1fr);
+      gap: 14px;
+      padding: 20px;
+      border: 3px solid var(--ink);
+      border-radius: 24px;
+      box-shadow: 6px 6px 0 rgba(23, 48, 71, 0.14);
+      margin-bottom: 20px;
+    }
+
+    .shape-label {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 178px;
+      padding: 16px;
+      border: 2px dashed rgba(23, 48, 71, 0.28);
+      border-radius: 18px;
+      text-align: center;
+    }
+
+    .photo-slots {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .photo-slot {
+      position: relative;
+      min-height: 178px;
+      overflow: hidden;
+      border: 2.5px dashed #98aeb4;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.85);
+      transition: all 0.2s ease;
+    }
+
+    .photo-slot.has-photo {
+      border-style: solid;
+      border-color: var(--ink);
+    }
+
+    .photo-preview {
+      position: absolute;
+      inset: 0;
+      display: none;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+
+    .photo-slot.has-photo .photo-preview { display: block; }
+
+    .photo-trigger {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .photo-slot.has-photo .photo-trigger {
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 12px;
+      background: linear-gradient(to top, rgba(23,48,71,0.55), transparent 40%);
+    }
+
+    .plus-badge {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      place-items: center;
+      border: 2.5px solid var(--ink);
+      border-radius: 50%;
+      background: var(--paper);
+      box-shadow: 3px 3px 0 rgba(23, 48, 71, 0.18);
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .photo-slot.has-photo .plus-badge {
+      width: 38px;
+      height: 38px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.9);
+      border-color: var(--ink);
+      color: var(--ink) !important;
+      box-shadow: none;
+    }
+
+    .camera-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .summary-card {
+      padding: 24px;
+      border: 3px solid var(--ink);
+      border-radius: 24px;
+      box-shadow: 6px 6px 0 rgba(23, 48, 71, 0.14);
+    }
+    .summary-card.jw { background: #fff0eb; }
+    .summary-card.sy { background: #e8f8f5; }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin: 18px 0;
+    }
+
+    .mini-stat {
+      padding: 10px 7px;
+      border: 2px solid rgba(23, 48, 71, 0.18);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.72);
+      text-align: center;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.8);
+      font-weight: 700;
+      border: 2px solid rgba(23,48,71,0.1);
+    }
+
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--triangle);
+    }
+    .status-dot.done { background: var(--circle); }
+
+    .dashboard-photos {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .dashboard-shape {
+      padding: 12px;
+      border: 2px solid rgba(23, 48, 71, 0.16);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .thumb-row {
+      display: flex;
+      gap: 10px;
+      min-height: 64px;
+    }
+
+    .thumb {
+      width: 68px;
+      height: 64px;
+      flex: 0 0 auto;
+      overflow: hidden;
+      border: 2px solid var(--ink);
+      border-radius: 12px;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-color: #fff;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .thumb:hover { transform: scale(1.05); }
+
+    .empty-thumb {
+      display: grid;
+      width: 68px;
+      height: 64px;
+      place-items: center;
+      border: 2px dashed #98aeb4;
+      border-radius: 12px;
+      color: #607886;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(10, 26, 38, 0.8);
+      backdrop-filter: blur(4px);
+    }
+    .modal.is-open { display: flex; }
+
+    .modal-card {
+      width: min(100%, 720px);
+      overflow: hidden;
+      border: 3px solid var(--ink);
+      border-radius: 24px;
+      background: #fffdf6;
+      box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-image {
+      display: block;
+      width: 100%;
+      max-height: 65vh;
+      object-fit: contain;
+      background: #173047;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-8px) rotate(2deg); }
+    }
+
+    @media (max-width: 720px) {
+      .student-choices, .student-summary-grid { grid-template-columns: 1fr; }
+      .shape-row { grid-template-columns: 1fr; }
+      .shape-label {
+        min-height: auto;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 14px;
+        text-align: left;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <main class="lesson-board">
+
+      <!-- ================= HOME VIEW ================= -->
+      <section id="home-view" class="view is-active" aria-labelledby="home-title">
+        <header class="hero-card" style="background: linear-gradient(135deg, #fff7d8, #dff5ef);">
+          <div class="home-content">
+            <p class="text-sm font-bold tracking-widest text-[#31576a] uppercase mb-2">1학년 수학 · 모양 찾기</p>
+            <h1 id="home-title" class="title-font text-4xl sm:text-5xl font-extrabold text-[#173047] mb-2">
+              신나는 모양 탐험대! 🔍
+            </h1>
+            
+            <div class="shape-parade" aria-hidden="true">
+              <svg viewBox="0 0 100 100">
+                <rect x="15" y="15" width="70" height="70" rx="6" fill="#ef6b55" stroke="#173047" stroke-width="6"/>
+              </svg>
+              <svg viewBox="0 0 100 100">
+                <path d="M50 12 L90 86 H10 Z" fill="#f5b84b" stroke="#173047" stroke-width="6" stroke-linejoin="round"/>
+              </svg>
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="38" fill="#42a6a2" stroke="#173047" stroke-width="6"/>
+              </svg>
+            </div>
+
+            <p class="text-lg sm:text-xl font-medium text-[#31576a] mb-6">
+              내 이름을 누르고 교실에서 모양을 찾아 사진을 찍어 보아요!
+            </p>
+
+            <div class="student-choices">
+              <button id="choose-jw" class="student-button bg-[#fff0eb] text-[#173047] hover:bg-[#ffe2d8]">
+                <span class="block text-xl mb-1">✦</span>
+                <span class="text-[#b73e2e] font-extrabold text-2xl sm:text-3xl">김지완</span>
+              </button>
+              <button id="choose-sy" class="student-button bg-[#e8f8f5] text-[#173047] hover:bg-[#d1f2eb]">
+                <span class="block text-xl mb-1">✦</span>
+                <span class="text-[#16736f] font-extrabold text-2xl sm:text-3xl">최서연</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="flex justify-center mt-6">
+          <button id="open-dashboard-home" class="dashboard-button px-6 py-3 text-lg bg-white">
+            📊 교사 대시보드
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ================= ACTIVITY VIEW ================= -->
+      <section id="activity-view" class="view" aria-labelledby="activity-title">
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <span class="student-chip">
+              <i data-lucide="user-round" class="w-5 h-5 text-[#173047]"></i>
+              <span id="active-student-name">김지완</span>
+            </span>
+            <h1 id="activity-title" class="title-font text-2xl sm:text-3xl font-extrabold text-[#173047] mt-3">
+              우리 주변에서 네모, 세모, 동그라미를 찾아 보아요!
+            </h1>
+            <p class="text-[#31576a] font-medium text-base mt-1">
+              📷 <b>+</b> 버튼을 눌러 카메라로 모양 사진을 2장씩 찍어주세요!
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button id="back-home-activity" class="nav-button px-4 py-2 text-base bg-white">첫 화면</button>
+            <button id="open-dashboard-activity" class="nav-button px-4 py-2 text-base bg-white">교사 대시보드</button>
+          </div>
+        </header>
+
+        <!-- Shape Rows -->
+        <div class="activity-list">
+          
+          <!-- 네모 (Square) -->
+          <article class="shape-row bg-[#fff0eb]">
+            <div class="shape-label">
+              <div class="w-16 h-16 mb-2">
+                <svg viewBox="0 0 100 100">
+                  <rect x="15" y="15" width="70" height="70" rx="4" fill="#ef6b55" stroke="#173047" stroke-width="5"/>
+                </svg>
+              </div>
+              <h2 class="text-2xl font-bold text-[#b73e2e]">네모</h2>
+            </div>
+            <div class="photo-slots">
+              <div class="photo-slot" data-shape="square" data-slot="1">
+                <div class="photo-preview"></div>
+                <button class="photo-trigger camera-button" data-shape="square" data-slot="1">
+                  <span class="plus-badge text-[#b73e2e]">+</span>
+                </button>
+              </div>
+              <div class="photo-slot" data-shape="square" data-slot="2">
+                <div class="photo-preview"></div>
+                <button class="photo-trigger camera-button" data-shape="square" data-slot="2">
+                  <span class="plus-badge text-[#b73e2e]">+</span>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- 세모 (Triangle) -->
+          <article class="shape-row bg-[#fff8dc]">
+            <div class="shape-label">
+              <div class="w-16 h-16 mb-2">
+                <svg viewBox="0 0 100 100">
+                  <path d="M50 12 L90 86 H10 Z" fill="#f5b84b" stroke="#173047" stroke-width="5" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <h2 class="text-2xl font-bold text-[#9b6600]">세모</h2>
+            </div>
+            <div class="photo-slots">
+              <div class="photo-slot" data-shape="triangle" data-slot="1">
+                <div class="photo-preview"></div>
+                <button class="photo-trigger camera-button" data-shape="triangle" data-slot="1">
+                  <span class="plus-badge text-[#9b6600]">+</span>
+                </button>
+              </div>
+              <div class="photo-slot" data-shape="triangle" data-slot="2">
+                <div class="photo-preview"></div>
+                <button class="photo-trigger camera-button" data-shape="triangle" data-slot="2">
+                  <span class="plus-badge text-[#9b6600]">+</span>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- 동그라미 (Circle) -->
+          <article class="shape-row bg-[#e8f8f5]">
+            <div class="shape-label">
+              <div class="w-16 h-16 mb-2">
+                <svg viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="37" fill="#42a6a2" stroke="#173047" stroke-width="5"/>
+                </svg>
+              </div>
+              <h2 class="text-2xl font-bold text-[#16736f]">동그라미</h2>
+            </div>
+            <div class="photo-slots">
+              <div class="photo-slot" data-shape="circle" data-slot="1">
+                <div class="photo-preview"></div>
+                <button class="photo-trigger camera-button" data-shape="circle" data-slot="1">
+                  <span class="plus-badge text-[#16736f]">+</span>
+                </button>
+              </div>
+              <div class="photo-slot" data-shape="circle" data-slot="2">
+                <div class="photo-preview"></div>
+                <button class="photo-trigger camera-button" data-shape="circle" data-slot="2">
+                  <span class="plus-badge text-[#16736f]">+</span>
+                </button>
+              </div>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- Hidden Camera Input -->
+        <input id="global-camera-input" class="camera-input" type="file" accept="image/*" capture="environment">
+
+        <!-- Progress & Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mt-8 pt-4 border-t-2 border-dashed border-[#173047]/20">
+          <button id="complete-button" class="complete-button px-6 py-3 text-lg bg-[#dff5ef] text-[#173047]">
+            ✅ 활동 완료 및 제출하기
+          </button>
+          <div id="save-status-msg" class="text-base font-bold text-[#31576a]"></div>
+        </div>
+      </section>
+
+
+      <!-- ================= DASHBOARD VIEW ================= -->
+      <section id="dashboard-view" class="view" aria-labelledby="dashboard-title">
+        <header class="dashboard-heading bg-gradient-to-r from-[#fff7d8] to-[#dff5ef] p-6 mb-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-bold tracking-widest text-[#31576a] uppercase mb-1">교사용 실시간 확인</p>
+              <h1 id="dashboard-title" class="title-font text-3xl font-extrabold text-[#173047]">
+                📊 교사 대시보드
+              </h1>
+              <p class="text-[#31576a] font-medium text-sm mt-1">
+                학생별 도형 사진과 제출 현황을 확인할 수 있습니다.
+              </p>
+            </div>
+            <button id="back-home-dashboard" class="nav-button px-5 py-2.5 text-base bg-white self-start md:self-auto">
+              첫 화면으로
+            </button>
+          </div>
+        </header>
+
+        <section class="student-summary-grid">
+          
+          <!-- 김지완 대시보드 -->
+          <article class="summary-card jw">
+            <h2 class="text-2xl font-bold text-[#b73e2e] mb-1">김지완</h2>
+            <p id="jw-selected-shapes" class="text-sm font-bold text-[#31576a]">찾은 도형: 아직 촬영 전</p>
+
+            <div class="summary-stats">
+              <div class="mini-stat">
+                <span class="text-xs font-bold text-[#b73e2e]">네모</span>
+                <strong id="jw-square-count" class="block text-xl text-[#173047]">0/2</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="text-xs font-bold text-[#9b6600]">세모</span>
+                <strong id="jw-triangle-count" class="block text-xl text-[#173047]">0/2</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="text-xs font-bold text-[#16736f]">동그라미</span>
+                <strong id="jw-circle-count" class="block text-xl text-[#173047]">0/2</strong>
+              </div>
+            </div>
+
+            <div class="status-line mb-3">
+              <span id="jw-status-dot" class="status-dot"></span>
+              <span id="jw-status-text" class="text-sm text-[#173047]">활동 진행 중</span>
+            </div>
+
+            <div id="jw-photos" class="dashboard-photos"></div>
+
+            <button class="nav-button w-full py-2.5 mt-4 text-base bg-white open-student-activity" data-student="김지완">
+              김지완 학생 화면으로 이동
+            </button>
+          </article>
+
+          <!-- 최서연 대시보드 -->
+          <article class="summary-card sy">
+            <h2 class="text-2xl font-bold text-[#16736f] mb-1">최서연</h2>
+            <p id="sy-selected-shapes" class="text-sm font-bold text-[#31576a]">찾은 도형: 아직 촬영 전</p>
+
+            <div class="summary-stats">
+              <div class="mini-stat">
+                <span class="text-xs font-bold text-[#b73e2e]">네모</span>
+                <strong id="sy-square-count" class="block text-xl text-[#173047]">0/2</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="text-xs font-bold text-[#9b6600]">세모</span>
+                <strong id="sy-triangle-count" class="block text-xl text-[#173047]">0/2</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="text-xs font-bold text-[#16736f]">동그라미</span>
+                <strong id="sy-circle-count" class="block text-xl text-[#173047]">0/2</strong>
+              </div>
+            </div>
+
+            <div class="status-line mb-3">
+              <span id="sy-status-dot" class="status-dot"></span>
+              <span id="sy-status-text" class="text-sm text-[#173047]">활동 진행 중</span>
+            </div>
+
+            <div id="sy-photos" class="dashboard-photos"></div>
+
+            <button class="nav-button w-full py-2.5 mt-4 text-base bg-white open-student-activity" data-student="최서연">
+              최서연 학생 화면으로 이동
+            </button>
+          </article>
+
+        </section>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= MODAL ================= -->
+  <div id="photo-modal" class="modal">
+    <div class="modal-card">
+      <img id="modal-image" class="modal-image" alt="확대 이미지">
+      <div class="p-4 bg-[#fffdf6] flex justify-between items-center border-t-2 border-[#173047]">
+        <span id="modal-caption" class="font-bold text-[#173047]">도형 사진</span>
+        <button id="close-modal" class="nav-button px-5 py-2 text-sm bg-[#ffe2d8]">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STUDENTS = ["김지완", "최서연"];
+    const SHAPES = ["square", "triangle", "circle"];
+    const SHAPE_NAMES = { square: "네모", triangle: "세모", circle: "동그라미" };
+
+    let activeStudent = null;
+    let pendingTargetSlot = null; // { shape, slot }
+
+    // Initial State Structure
+    let appData = {
+      "김지완": { completed: false, square: ["", ""], triangle: ["", ""], circle: ["", ""] },
+      "최서연": { completed: false, square: ["", ""], triangle: ["", ""], circle: ["", ""] }
+    };
+
+    // Load Local Data
+    function loadStorageData() {
+      try {
+        const saved = localStorage.getItem("shape_explorer_data_v2");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          appData = { ...appData, ...parsed };
+        }
+      } catch (e) {
+        console.warn("Storage load error:", e);
+      }
+    }
+
+    function saveStorageData() {
+      try {
+        localStorage.setItem("shape_explorer_data_v2", JSON.stringify(appData));
+      } catch (e) {
+        console.error("Storage save error:", e);
+      }
+    }
+
+    // Resize & Compress Image to Max 600px width/height and 0.65 JPEG Quality
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 600;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to Base64 JPEG
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.65);
+          callback(compressedDataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showView(viewId) {
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("is-active"));
+      document.getElementById(viewId).classList.add("is-active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function openStudentActivity(studentName) {
+      activeStudent = studentName;
+      document.getElementById("active-student-name").textContent = studentName;
+      updateActivityUI();
+      showView("activity-view");
+    }
+
+    function openDashboard() {
+      updateDashboardUI();
+      showView("dashboard-view");
+    }
+
+    function updateActivityUI() {
+      if (!activeStudent) return;
+      const studentData = appData[activeStudent];
+
+      SHAPES.forEach(shape => {
+        [1, 2].forEach(slot => {
+          const slotEl = document.querySelector(`.photo-slot[data-shape="${shape}"][data-slot="${slot}"]`);
+          if (!slotEl) return;
+          
+          const previewEl = slotEl.querySelector(".photo-preview");
+          const imgUrl = studentData[shape][slot - 1];
+
+          if (imgUrl) {
+            slotEl.classList.add("has-photo");
+            previewEl.style.backgroundImage = `url("${imgUrl}")`;
+          } else {
+            slotEl.classList.remove("has-photo");
+            previewEl.style.backgroundImage = "";
+          }
+        });
+      });
+
+      // Update Complete Button State
+      const compBtn = document.getElementById("complete-button");
+      if (studentData.completed) {
+        compBtn.classList.add("bg-[#42a6a2]", "text-white");
+        compBtn.textContent = "✅ 제출 완료됨 (수정 가능)";
+      } else {
+        compBtn.classList.remove("bg-[#42a6a2]", "text-white");
+        compBtn.textContent = "✅ 활동 완료 및 제출하기";
+      }
+
+      document.getElementById("save-status-msg").textContent = "";
+    }
+
+    function updateDashboardUI() {
+      const studentKeys = [
+        { name: "김지완", key: "jw" },
+        { name: "최서연", key: "sy" }
+      ];
+
+      studentKeys.forEach(({ name, key }) => {
+        const data = appData[name];
+        
+        let sqCount = data.square.filter(Boolean).length;
+        let trCount = data.triangle.filter(Boolean).length;
+        let ciCount = data.circle.filter(Boolean).length;
+
+        document.getElementById(`${key}-square-count`).textContent = `${sqCount}/2`;
+        document.getElementById(`${key}-triangle-count`).textContent = `${trCount}/2`;
+        document.getElementById(`${key}-circle-count`).textContent = `${ciCount}/2`;
+
+        // Found shape types text
+        let found = [];
+        if (sqCount > 0) found.push("네모");
+        if (trCount > 0) found.push("세모");
+        if (ciCount > 0) found.push("동그라미");
+        
+        document.getElementById(`${key}-selected-shapes`).textContent = 
+          found.length > 0 ? `찾은 도형: ${found.join(" · ")}` : "찾은 도형: 아직 촬영 전";
+
+        // Status Line
+        const dot = document.getElementById(`${key}-status-dot`);
+        const text = document.getElementById(`${key}-status-text`);
+        if (data.completed) {
+          dot.classList.add("done");
+          text.textContent = "🎉 활동 완료 및 제출됨!";
+        } else {
+          dot.classList.remove("done");
+          text.textContent = `진행 중 (사진 ${sqCount + trCount + ciCount}/6장)`;
+        }
+
+        // Render Photo Groups in Dashboard
+        const container = document.getElementById(`${key}-photos`);
+        container.innerHTML = "";
+
+        SHAPES.forEach(shape => {
+          const group = document.createElement("div");
+          group.className = "dashboard-shape";
+
+          const title = document.createElement("div");
+          title.className = "text-xs font-bold text-[#31576a] mb-1.5";
+          title.textContent = `${SHAPE_NAMES[shape]} 사진`;
+
+          const row = document.createElement("div");
+          row.className = "thumb-row";
+
+          const photos = data[shape].filter(Boolean);
+          if (photos.length === 0) {
+            row.innerHTML = `<div class="empty-thumb">없음</div>`;
+          } else {
+            photos.forEach((imgUrl, idx) => {
+              const thumb = document.createElement("div");
+              thumb.className = "thumb";
+              thumb.style.backgroundImage = `url("${imgUrl}")`;
+              thumb.onclick = () => openModal(imgUrl, `${name} - ${SHAPE_NAMES[shape]} 사진 ${idx + 1}`);
+              row.appendChild(thumb);
+            });
+          }
+
+          group.appendChild(title);
+          group.appendChild(row);
+          container.appendChild(group);
+        });
+      });
+    }
+
+    function openModal(imgSrc, caption) {
+      document.getElementById("modal-image").src = imgSrc;
+      document.getElementById("modal-caption").textContent = caption;
+      document.getElementById("photo-modal").classList.add("is-open");
+    }
+
+    function closeModal() {
+      document.getElementById("photo-modal").classList.remove("is-open");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      loadStorageData();
+
+      // Navigation
+      document.getElementById("choose-jw").addEventListener("click", () => openStudentActivity("김지완"));
+      document.getElementById("choose-sy").addEventListener("click", () => openStudentActivity("최서연"));
+      document.getElementById("open-dashboard-home").addEventListener("click", openDashboard);
+      document.getElementById("open-dashboard-activity").addEventListener("click", openDashboard);
+      document.getElementById("back-home-activity").addEventListener("click", () => showView("home-view"));
+      document.getElementById("back-home-dashboard").addEventListener("click", () => showView("home-view"));
+      document.getElementById("close-modal").addEventListener("click", closeModal);
+
+      document.querySelectorAll(".open-student-activity").forEach(btn => {
+        btn.addEventListener("click", () => openStudentActivity(btn.dataset.student));
+      });
+
+      // Camera Trigger Handler
+      const cameraInput = document.getElementById("global-camera-input");
+
+      document.querySelectorAll(".camera-button").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const slotEl = btn.closest(".photo-slot");
+          pendingTargetSlot = {
+            shape: slotEl.dataset.shape,
+            slot: parseInt(slotEl.dataset.slot, 10)
+          };
+          cameraInput.value = "";
+          cameraInput.click();
+        });
+      });
+
+      // Camera Input File Change (Compress & Save)
+      cameraInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file || !pendingTargetSlot || !activeStudent) return;
+
+        const msgEl = document.getElementById("save-status-msg");
+        msgEl.textContent = "⏳ 사진 압축 및 저장 중...";
+
+        compressImage(file, (compressedBase64) => {
+          const { shape, slot } = pendingTargetSlot;
+          appData[activeStudent][shape][slot - 1] = compressedBase64;
+          saveStorageData();
+          updateActivityUI();
+          msgEl.textContent = "✨ 사진이 저장되었습니다!";
+        });
+      });
+
+      // Complete Button Handler
+      document.getElementById("complete-button").addEventListener("click", () => {
+        if (!activeStudent) return;
+        appData[activeStudent].completed = true;
+        saveStorageData();
+        updateActivityUI();
+        document.getElementById("save-status-msg").textContent = "🎉 성공적으로 제출되었습니다!";
+      });
+    });
+  </script>
+</body>
+</html>
